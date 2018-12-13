@@ -1,0 +1,61 @@
+module quadencoder (
+    input clk,       // clock
+    input rst,       // reset
+    input a,    // button input
+    input b,
+    output count[16]  // press counter
+  ) {
+ 
+  .clk(clk) {
+    pipeline syncA(#DEPTH(2));
+    pipeline syncB(#DEPTH(2));
+    
+    edge_detector aRise(#RISE(1), #FALL(0)); // detect rising edges
+    edge_detector bRise(#RISE(1), #FALL(0)); // detect rising edges
+    edge_detector aFall(#RISE(0), #FALL(1)); // detect falling edges
+    edge_detector bFall(#RISE(0), #FALL(1)); // detect falling edges
+ 
+//    button_conditioner aCond;     // button input conditioner
+  //  button_conditioner bCond;     // button input conditioner
+ 
+    .rst(rst) {
+       dff ctr[16]; // our lovely counter
+    }
+  }
+ 
+  always {
+    syncA.in = a;
+    syncB.in = b;
+    
+    aRise.in = syncA.out;
+    bRise.in = syncB.out;
+    aFall.in = syncA.out;
+    bFall.in = syncB.out;
+    count = ctr.q;                      // output the counter
+ 
+    if (aRise.out){              // if edge detected
+      if (b)      
+        ctr.d = ctr.q - 1;                // add one to the counter
+      else
+        ctr.d = ctr.q + 1;
+    }
+    if (aFall.out){
+      if (b)
+        ctr.d = ctr.q + 1;
+      else
+        ctr.d = ctr.q - 1;
+    }
+    if (bRise.out){
+      if (a)
+        ctr.d = ctr.q + 1;
+      else
+        ctr.d = ctr.q - 1;
+    }
+    if (bFall.out){
+      if (a)
+        ctr.d = ctr.q - 1;
+      else
+        ctr.d = ctr.q + 1;   
+    }
+  }
+}
